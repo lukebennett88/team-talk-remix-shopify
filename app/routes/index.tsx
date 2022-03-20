@@ -1,6 +1,7 @@
 import type { LoaderFunction } from "remix";
 import { json, Link, useLoaderData } from "remix";
 
+import { OptimisedImage } from "~/components/optimised-image";
 import { PRODUCTS_QUERY } from "~/queries";
 import { formatCurrency } from "~/utils/format-currency";
 import { shopifyClient } from "~/utils/shopify-client";
@@ -61,10 +62,32 @@ function Products({ products }: { products: LoaderData["products"] }) {
         {products.map(({ node }) => (
           <Link key={node.id} className="group" to={`/products/${node.handle}`}>
             <div className="aspect-[4/3] w-full overflow-hidden rounded-lg">
-              <img
+              <OptimisedImage
                 src={node.images.edges[0].node.transformedSrc}
                 className="h-full w-full object-cover object-center group-hover:opacity-75"
                 alt={node.images.edges[0].node.altText || ""}
+                height={430}
+                width={574}
+                responsive={[
+                  {
+                    size: {
+                      height: 730,
+                      width: 974,
+                    },
+                  },
+                  {
+                    size: {
+                      height: 730 * 1.5,
+                      width: 974 * 1.5,
+                    },
+                  },
+                  {
+                    size: {
+                      height: 730 * 2,
+                      width: 974 * 2,
+                    },
+                  },
+                ]}
               />
             </div>
             <div className="mt-4 flex items-center justify-between text-base font-medium text-gray-900">
