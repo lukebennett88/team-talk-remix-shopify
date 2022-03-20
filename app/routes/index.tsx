@@ -1,4 +1,4 @@
-import type { LoaderFunction } from "remix";
+import type { HeadersFunction, LoaderFunction } from "remix";
 import { json, Link, useLoaderData } from "remix";
 
 import { OptimisedImage } from "~/components/optimised-image";
@@ -13,6 +13,10 @@ type LoaderData = {
 export const loader: LoaderFunction = async () => {
   const { data } = await shopifyClient({ operation: PRODUCTS_QUERY });
   return json<LoaderData>({ products: data.products.edges });
+};
+
+export const headers: HeadersFunction = () => {
+  return { "Cache-Control": "max-age=3600" };
 };
 
 export default function Index() {
@@ -60,7 +64,12 @@ function Products({ products }: { products: LoaderData["products"] }) {
       </h2>
       <div className="grid grid-cols-1 gap-y-10 gap-x-6 sm:grid-cols-2 lg:grid-cols-3 xl:gap-x-8">
         {products.map(({ node }) => (
-          <Link key={node.id} className="group" to={`/products/${node.handle}`}>
+          <Link
+            key={node.id}
+            prefetch="intent"
+            className="group"
+            to={`/products/${node.handle}`}
+          >
             <div className="aspect-[4/3] w-full overflow-hidden rounded-lg">
               <OptimisedImage
                 src={node.images.edges[0].node.transformedSrc}

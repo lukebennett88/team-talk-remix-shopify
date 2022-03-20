@@ -1,4 +1,4 @@
-import type { ActionFunction, LoaderFunction } from "remix";
+import type { ActionFunction, HeadersFunction, LoaderFunction } from "remix";
 import {
   Form,
   json,
@@ -18,6 +18,10 @@ import { formatCurrency } from "~/utils/format-currency";
 import { shopifyClient } from "~/utils/shopify-client";
 
 const VARIANT_ID = "variantId";
+
+export const headers: HeadersFunction = () => {
+  return { "Cache-Control": "max-age=3600" };
+};
 
 type LoaderData = {
   product: NonNullable<
@@ -251,7 +255,7 @@ export default function ProductPage() {
                   </div>
                   <div className="mt-4 flex items-center justify-between space-x-8 text-base font-medium text-gray-900">
                     <h3>
-                      <Link to={`/products/${node.handle}`}>
+                      <Link prefetch="intent" to={`/products/${node.handle}`}>
                         <span aria-hidden="true" className="absolute inset-0" />
                         {node.title}
                       </Link>
