@@ -1,8 +1,20 @@
-import type { LoaderFunction } from "remix";
-import { json, Link, useLoaderData } from "remix";
+import { useEffect, useState } from "react";
+import type { ActionFunction, LoaderFunction } from "remix";
+import {
+  Form,
+  json,
+  Link,
+  redirect,
+  useLoaderData,
+  useTransition,
+} from "remix";
 import invariant from "tiny-invariant";
 
-import { PRODUCTS_QUERY, SINGLE_PRODUCT_QUERY } from "~/queries";
+import {
+  CREATE_CHECKOUT_URL_MUTATION,
+  PRODUCTS_QUERY,
+  SINGLE_PRODUCT_QUERY,
+} from "~/queries";
 import { formatCurrency } from "~/utils/format-currency";
 import { shopifyClient } from "~/utils/shopify-client";
 
@@ -41,6 +53,24 @@ export const loader: LoaderFunction = async ({ params }) => {
     product,
     relatedProducts,
   });
+};
+
+export const action: ActionFunction = async ({ params, request }) => {
+  const formData = await request.formData();
+  const variantId = formData.get("variantId");
+  if (!variantId) {
+    throw new Response("Variant not found", { status: 404 });
+  }
+  const {
+    data: { checkoutCreate },
+  } = await shopifyClient({
+    operation: CREATE_CHECKOUT_URL_MUTATION,
+    variables: {
+      input: { lineItems: [{ quantity: 1, variantId: variantId as string }] },
+    },
+  });
+  const webUrl = checkoutCreate?.checkout?.webUrl;
+  return redirect(webUrl);
 };
 
 export default function ProductPage() {
@@ -84,16 +114,31 @@ export default function ProductPage() {
 
             <p className="mt-6 text-gray-500">{product.description}</p>
 
-            <div className="mt-10 grid grid-cols-1 gap-x-6 gap-y-4 sm:grid-cols-2">
+            <Form
+              method="post"
+              className="mt-10 grid grid-cols-1 gap-x-6 gap-y-4 sm:grid-cols-2"
+            >
+              <input type="hidden" name="_action" value="Buy now" />
+              <input
+                type="hidden"
+                name="variantId"
+                value={product.variants.edges[0].node.id}
+              />
               <button
-                type="button"
+                type="submit"
                 className="flex w-full items-center justify-center rounded-md border border-transparent bg-gray-900 py-3 px-8 text-base font-medium text-white hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 focus:ring-offset-gray-50"
               >
-                Pay{" "}
-                {formatCurrency(
-                  product.priceRange.minVariantPrice.amount,
-                  product.priceRange.minVariantPrice.currencyCode
-                )}
+                <SubmissionSequenceText
+                  action="Buy now"
+                  strings={[
+                    `Pay ${formatCurrency(
+                      product.priceRange.minVariantPrice.amount,
+                      product.priceRange.minVariantPrice.currencyCode
+                    )}`,
+                    "Redirecting...",
+                    "An error occurred",
+                  ]}
+                />
               </button>
               <button
                 type="button"
@@ -101,7 +146,7 @@ export default function ProductPage() {
               >
                 Preview
               </button>
-            </div>
+            </Form>
 
             <div className="mt-10 border-t border-gray-200 pt-10">
               <h3 className="text-sm font-medium text-gray-900">License</h3>
@@ -172,6 +217,30 @@ export default function ProductPage() {
       </div>
     </main>
   );
+}
+
+function SubmissionSequenceText({
+  strings,
+  action,
+}: {
+  strings: Array<string>;
+  action: string;
+}) {
+  const transition = useTransition();
+  const [text, setText] = useState(strings[0]);
+  useEffect(() => {
+    if (transition.submission?.formData.get("_action") === action) {
+      if (transition.state === "submitting") {
+        setText(strings[1]);
+      } else if (transition.state === "loading") {
+        setText(strings[2]);
+      }
+    } else {
+      const timeoutId = setTimeout(() => setText(strings[0]), 1000);
+      return () => clearTimeout(timeoutId);
+    }
+  }, [action, strings, transition.state, transition.submission?.formData]);
+  return <>{text}</>;
 }
 
 const license = {

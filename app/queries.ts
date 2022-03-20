@@ -23,6 +23,13 @@ export const SINGLE_PRODUCT_QUERY = gql`
           }
         }
       }
+      variants(first: 1) {
+        edges {
+          node {
+            id
+          }
+        }
+      }
     }
   }
 ` as import("../__generated__/ts-gql/singleProductQuery").type;
@@ -57,3 +64,14 @@ export const PRODUCTS_QUERY = gql`
     }
   }
 ` as import("../__generated__/ts-gql/productsQuery").type;
+
+export const CREATE_CHECKOUT_URL_MUTATION = gql`
+  mutation createCheckoutUrlMutation($input: CheckoutCreateInput!) {
+    checkoutCreate(input: $input) {
+      checkout {
+        id
+        webUrl
+      }
+    }
+  }
+` as import("../__generated__/ts-gql/createCheckoutUrlMutation").type;
