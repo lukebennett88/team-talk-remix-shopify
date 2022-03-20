@@ -9,3 +9,9 @@
 5. Under "Default header" enter
    1. Header key: `X-Shopify-Storefront-Access-Token`
    2. Value: `ACCESS_TOKEN` (example can be found in `.env.example`)
+
+## Prior Art
+
+The design of this site is taken from [this video](https://www.youtube.com/watch?v=xNMYz74zNHM) by former Thinkmiller Simon Vrachliotis on the Tailwind CSS YouTube channel.
+The deployed Next.js site referenced in the video can be found here:
+<https://tailwindui-shopify.vercel.app/>
