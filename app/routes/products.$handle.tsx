@@ -220,7 +220,7 @@ export default function ProductPage() {
                     <OptimisedImage
                       src={node.images.edges[0].node.transformedSrc}
                       alt={node.images.edges[0].node.altText || ""}
-                      className="object-cover object-center group-hover:opacity-75"
+                      className="h-full w-full object-cover object-center group-hover:opacity-75"
                       height={240}
                       width={320}
                       responsive={[
@@ -244,14 +244,6 @@ export default function ProductPage() {
                         },
                       ]}
                     />
-                    <div
-                      className="flex items-end p-4 opacity-0 group-hover:opacity-100"
-                      aria-hidden="true"
-                    >
-                      <div className="w-full rounded-md bg-white bg-opacity-75 py-2 px-4 text-center text-sm font-medium text-gray-900 backdrop-blur backdrop-filter">
-                        View Product
-                      </div>
-                    </div>
                   </div>
                   <div className="mt-4 flex items-center justify-between space-x-8 text-base font-medium text-gray-900">
                     <h3>
