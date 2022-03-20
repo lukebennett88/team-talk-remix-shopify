@@ -1,7 +1,7 @@
-import { gql } from "@ts-gql/tag/no-transform";
 import type { LoaderFunction } from "remix";
 import { json, Link, useLoaderData } from "remix";
 
+import { PRODUCTS_QUERY } from "~/queries";
 import { formatCurrency } from "~/utils/format-currency";
 import { shopifyClient } from "~/utils/shopify-client";
 
@@ -85,34 +85,3 @@ function Products({ products }: { products: LoaderData["products"] }) {
     </div>
   );
 }
-
-const PRODUCTS_QUERY = gql`
-  query productsQuery($first: Int = 6) {
-    products(first: $first) {
-      edges {
-        node {
-          id
-          title
-          description
-          handle
-          tags
-          priceRange {
-            minVariantPrice {
-              amount
-              currencyCode
-            }
-          }
-          images(first: 1) {
-            edges {
-              node {
-                id
-                altText
-                transformedSrc
-              }
-            }
-          }
-        }
-      }
-    }
-  }
-` as import("../../__generated__/ts-gql/productsQuery").type;
