@@ -5,19 +5,22 @@
   "license": "",
   "sideEffects": false,
   "scripts": {
-    "build": "npm run build:css && remix build",
+    "build": "yarn run build:css && remix build",
     "build:css": "tailwindcss -m -i ./styles/app.css -o app/styles/app.css",
-    "dev": "yarn build:css && concurrently \"npm run dev:css\" \"remix dev\"",
+    "dev": "yarn build:css && concurrently \"yarn run dev:ts-gql\" \"yarn run dev:css\" \"remix dev\"",
     "dev:css": "tailwindcss -w -i ./styles/app.css -o app/styles/app.css",
+    "dev:ts-gql": "ts-gql watch",
     "format": "prettier --write \"**/*.{ts,tsx,md}\" --ignore-path \"./.gitignore\"",
     "generate": "DOTENV_CONFIG_PATH=./.env graphql-codegen -r dotenv/config --config shopify-codegen.json",
-    "postinstall": "remix setup node",
+    "postinstall": "remix setup node && ts-gql build",
     "lint": "TIMING=1 eslint . --fix --ignore-path \"./.gitignore\"",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@remix-run/react": "^1.3.2",
     "@remix-run/vercel": "^1.3.2",
+    "@ts-gql/compiler": "^0.15.0",
+    "@ts-gql/tag": "^0.6.0",
     "react": "^17.0.2",
     "react-dom": "^17.0.2",
     "remix": "^1.3.2"
@@ -30,6 +33,7 @@
     "@remix-run/serve": "^1.3.2",
     "@tailwindcss/forms": "^0.5.0",
     "@tailwindcss/typography": "^0.5.2",
+    "@ts-gql/eslint-plugin": "^0.8.0",
     "@types/eslint": "^8.4.1",
     "@types/react": "^17.0.24",
     "@types/react-dom": "^17.0.9",
@@ -48,5 +52,10 @@
   },
   "engines": {
     "node": ">=14"
+  },
+  "ts-gql": {
+    "addTypenames": false,
+    "mode": "no-transform",
+    "schema": "./shopify-schema.graphql"
   }
 }

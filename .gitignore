@@ -5,6 +5,7 @@ node_modules
 .vercel
 .output
 
+__generated__
 /api/index.js
 /app/styles/app.css
 /build/
