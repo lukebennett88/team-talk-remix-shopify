@@ -1,0 +1,11 @@
+node_modules
+
+.cache
+.env
+.vercel
+.output
+
+/api/index.js
+/app/styles/app.css
+/build/
+/public/build
