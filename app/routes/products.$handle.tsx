@@ -222,7 +222,6 @@ export default function ProductPage() {
 
 function useButtonText({ idleText }: { idleText: string }) {
   const transition = useTransition();
-  console.log(transition);
 
   const statusToText = {
     idle: idleText,
