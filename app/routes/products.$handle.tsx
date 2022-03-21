@@ -58,17 +58,24 @@ export const action: ActionFunction = async ({ params, request }) => {
   const formData = await request.formData();
   const variantId = formData.get("variantId");
   if (!variantId) {
-    throw new Response("Variant not found", { status: 404 });
+    // Ideally we'd show an out of stock message here before we get to this screen
+    // but this is just a basic example...
+    throw new Response("Variant not found", { status: 500 });
   }
+
   const {
     data: { checkoutCreate },
   } = await shopifyClient({
     operation: CREATE_CHECKOUT_URL_MUTATION,
     variables: {
-      input: { lineItems: [{ quantity: 1, variantId: variantId as string }] },
+      input: { lineItems: [{ quantity: 1, variantId: variantId.toString() }] },
     },
   });
+
+  // Types are showing as `any` here, but it's potentially undefined (because of optional chaining)
+  // Ideally we'd handle this case, but again this is just a demo app...
   const webUrl = checkoutCreate?.checkout?.webUrl;
+
   return redirect(webUrl);
 };
 
