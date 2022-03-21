@@ -1,4 +1,3 @@
-import { useEffect, useState } from "react";
 import type { ActionFunction, LoaderFunction } from "remix";
 import {
   Form,
@@ -75,6 +74,12 @@ export const action: ActionFunction = async ({ params, request }) => {
 
 export default function ProductPage() {
   const { product, relatedProducts } = useLoaderData<LoaderData>();
+  const buttonText = useButtonText({
+    idleText: `Pay ${formatCurrency(
+      product.priceRange.minVariantPrice.amount,
+      product.priceRange.minVariantPrice.currencyCode
+    )}`,
+  });
 
   return (
     <main className="bg-white">
@@ -118,7 +123,6 @@ export default function ProductPage() {
               method="post"
               className="mt-10 grid grid-cols-1 gap-x-6 gap-y-4 sm:grid-cols-2"
             >
-              <input type="hidden" name="_action" value="Buy now" />
               <input
                 type="hidden"
                 name="variantId"
@@ -128,17 +132,7 @@ export default function ProductPage() {
                 type="submit"
                 className="flex w-full items-center justify-center rounded-md border border-transparent bg-gray-900 py-3 px-8 text-base font-medium text-white hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 focus:ring-offset-gray-50"
               >
-                <SubmissionSequenceText
-                  action="Buy now"
-                  strings={[
-                    `Pay ${formatCurrency(
-                      product.priceRange.minVariantPrice.amount,
-                      product.priceRange.minVariantPrice.currencyCode
-                    )}`,
-                    "Redirecting...",
-                    "An error occurred",
-                  ]}
-                />
+                {buttonText}
               </button>
               <button
                 type="button"
@@ -219,28 +213,18 @@ export default function ProductPage() {
   );
 }
 
-function SubmissionSequenceText({
-  strings,
-  action,
-}: {
-  strings: Array<string>;
-  action: string;
-}) {
+function useButtonText({ idleText }: { idleText: string }) {
   const transition = useTransition();
-  const [text, setText] = useState(strings[0]);
-  useEffect(() => {
-    if (transition.submission?.formData.get("_action") === action) {
-      if (transition.state === "submitting") {
-        setText(strings[1]);
-      } else if (transition.state === "loading") {
-        setText(strings[2]);
-      }
-    } else {
-      const timeoutId = setTimeout(() => setText(strings[0]), 1000);
-      return () => clearTimeout(timeoutId);
-    }
-  }, [action, strings, transition.state, transition.submission?.formData]);
-  return <>{text}</>;
+  console.log(transition);
+
+  const statusToText = {
+    idle: idleText,
+    loading: "An error occured",
+    // If the page is loading after an `actionReload` event something has gone wrong
+    submitting: "Redirecting...",
+  };
+
+  return statusToText[transition.state];
 }
 
 const license = {
