@@ -1,6 +1,11 @@
 import type { ComponentPropsWithoutRef } from "react";
 
 interface OptimisedImageProps extends ComponentPropsWithoutRef<"img"> {
+  /**
+   * provides fallback (alternate) text to display when the image specified
+   * by the <img> element is not loaded.
+   * */
+  alt: string;
   responsive?: Array<{
     maxWidth?: number;
     size: { width: number; height?: number };
