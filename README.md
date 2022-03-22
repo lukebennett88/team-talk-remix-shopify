@@ -18,6 +18,7 @@
 - [ ] [Static product page](https://github.com/lukebennett88/team-talk-remix-shopify/pull/4/files)
 - [ ] [Wire up data for product page](https://github.com/lukebennett88/team-talk-remix-shopify/pull/5/files)
 - [ ] [Wire up checkout mutation](https://github.com/lukebennett88/team-talk-remix-shopify/pull/6/files)
+- [ ] [Improve performance](https://github.com/lukebennett88/team-talk-remix-shopify/pull/7/files)
 
 ## Prior Art
 
