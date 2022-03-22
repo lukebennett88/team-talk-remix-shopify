@@ -225,9 +225,11 @@ function useButtonText({ idleText }: { idleText: string }) {
 
   const statusToText = {
     idle: idleText,
-    loading: "An error occured",
-    // If the page is loading after an `actionReload` event something has gone wrong
     submitting: "Redirecting...",
+    // If we're in the `loading` state it means the form has finished submitting
+    // and the page is reloading. Since we redirct to the `webUrl` we shouldn't
+    // enter this state unless something has gone wrong.
+    loading: "An error occured",
   };
 
   return statusToText[transition.state];
