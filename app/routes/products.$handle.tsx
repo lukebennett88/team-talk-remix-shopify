@@ -7,7 +7,6 @@ import {
   useLoaderData,
   useTransition,
 } from "remix";
-import invariant from "tiny-invariant";
 
 import {
   CREATE_CHECKOUT_URL_MUTATION,
@@ -28,7 +27,9 @@ type LoaderData = {
 
 export const loader: LoaderFunction = async ({ params }) => {
   const { handle } = params;
-  invariant(handle, "Product handle not found");
+  if (!handle) {
+    throw new Error("Product handle not found");
+  }
 
   const [singleProductResponse, relatedProductsResponse] = await Promise.all([
     await shopifyClient({
