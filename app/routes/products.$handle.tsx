@@ -230,9 +230,9 @@ function useButtonText({ idleText }: { idleText: string }) {
     idle: idleText,
     submitting: "Redirecting...",
     // If we're in the `loading` state it means the form has finished submitting
-    // and the page is reloading. Since we redirct to the `webUrl` we shouldn't
+    // and the page is reloading. Since we redirect to the `webUrl` we shouldn't
     // enter this state unless something has gone wrong.
-    loading: "An error occured",
+    loading: "An error occurred",
   };
 
   return statusToText[transition.state];
