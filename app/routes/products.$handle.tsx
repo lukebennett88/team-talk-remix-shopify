@@ -84,12 +84,16 @@ export const action: ActionFunction = async ({ params, request }) => {
 
 export default function ProductPage() {
   const { product, relatedProducts } = useLoaderData<LoaderData>();
-  const buttonText = useButtonText({
-    idleText: `Pay ${formatCurrency(
-      product.priceRange.minVariantPrice.amount,
-      product.priceRange.minVariantPrice.currencyCode
-    )}`,
-  });
+
+  let buttonText = `Pay ${formatCurrency(
+    product.priceRange.minVariantPrice.amount,
+    product.priceRange.minVariantPrice.currencyCode
+  )}`;
+
+  const transition = useTransition();
+  if (transition.state === "submitting") {
+    buttonText = "Submitting...";
+  }
 
   return (
     <main className="bg-white">
@@ -221,21 +225,6 @@ export default function ProductPage() {
       </div>
     </main>
   );
-}
-
-function useButtonText({ idleText }: { idleText: string }) {
-  const transition = useTransition();
-
-  const statusToText = {
-    idle: idleText,
-    submitting: "Redirecting...",
-    // If we're in the `loading` state it means the form has finished submitting
-    // and the page is reloading. Since we redirect to the `webUrl` we shouldn't
-    // enter this state unless something has gone wrong.
-    loading: "An error occurred",
-  };
-
-  return statusToText[transition.state];
 }
 
 const license = {
