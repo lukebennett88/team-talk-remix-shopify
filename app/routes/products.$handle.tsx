@@ -17,6 +17,8 @@ import {
 import { formatCurrency } from "~/utils/format-currency";
 import { shopifyClient } from "~/utils/shopify-client";
 
+const VARIANT_ID = "variantId";
+
 type LoaderData = {
   product: NonNullable<
     typeof SINGLE_PRODUCT_QUERY["___type"]["result"]["productByHandle"]
@@ -56,7 +58,7 @@ export const loader: LoaderFunction = async ({ params }) => {
 
 export const action: ActionFunction = async ({ params, request }) => {
   const formData = await request.formData();
-  const variantId = formData.get("variantId");
+  const variantId = formData.get(VARIANT_ID);
   if (!variantId) {
     // Ideally we'd show an out of stock message here before we get to this screen
     // but this is just a basic example...
@@ -132,7 +134,7 @@ export default function ProductPage() {
             >
               <input
                 type="hidden"
-                name="variantId"
+                name={VARIANT_ID}
                 value={product.variants.edges[0].node.id}
               />
               <button
