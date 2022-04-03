@@ -56,10 +56,10 @@ export const loader: LoaderFunction = async ({ params }) => {
     .filter(({ node }) => node.handle !== handle)
     .slice(0, 4);
 
-  return json<LoaderData>({
-    product,
-    relatedProducts,
-  });
+  return json<LoaderData>(
+    { product, relatedProducts },
+    { headers: { "Cache-Control": "public, s-maxage=3600" } }
+  );
 };
 
 export const action: ActionFunction = async ({ params, request }) => {

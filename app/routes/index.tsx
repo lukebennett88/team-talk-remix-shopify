@@ -12,7 +12,10 @@ type LoaderData = {
 
 export const loader: LoaderFunction = async () => {
   const { data } = await shopifyClient({ operation: PRODUCTS_QUERY });
-  return json<LoaderData>({ products: data.products.edges });
+  return json<LoaderData>(
+    { products: data.products.edges },
+    { headers: { "Cache-Control": "public, s-maxage=3600" } }
+  );
 };
 
 export const headers: HeadersFunction = () => {
