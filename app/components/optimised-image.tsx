@@ -6,6 +6,11 @@ interface OptimisedImageProps extends ComponentPropsWithoutRef<"img"> {
    * by the <img> element is not loaded.
    * */
   alt: string;
+  /**
+   * contains the path to the image you want to embed.
+   */
+  src: string;
+
   responsive?: Array<{
     maxWidth?: number;
     size: { width: number; height?: number };
@@ -17,18 +22,24 @@ export function OptimisedImage({
   responsive,
   src,
   loading = "lazy",
-  ...rest
+  ...consumerProps
 }: OptimisedImageProps) {
-  const props: ComponentPropsWithoutRef<"img"> = {
-    src: src + `&width=${rest.width || ""}&height=${rest.height || ""}`,
-  };
+  const srcUrl = new URL(src);
+  const props: ComponentPropsWithoutRef<"img"> = {};
+
+  if (consumerProps.height) {
+    srcUrl.searchParams.set("width", "consumerProps.width");
+  }
+  srcUrl.searchParams.set("width", "consumerProps.width");
+  props.src = srcUrl.toString();
 
   let largestImageWidth = 0;
   let largestImageSrc: string | undefined;
-  if (responsive && responsive.length) {
+
+  if (responsive?.length) {
     let srcSet = "";
     let sizes = "";
-    for (const { maxWidth, size } of responsive) {
+    responsive.forEach(({ maxWidth, size }) => {
       if (srcSet) {
         srcSet += ", ";
       }
@@ -47,15 +58,19 @@ export function OptimisedImage({
         largestImageWidth = size.width;
         largestImageSrc = srcSetUrl;
       }
-    }
+    });
+
     props.srcSet = srcSet;
     props.sizes = sizes || "100vw";
     props.src = "";
   }
 
-  if (largestImageSrc && (!rest.width || largestImageWidth > rest.width)) {
+  if (
+    largestImageSrc &&
+    (!consumerProps.width || largestImageWidth > consumerProps.width)
+  ) {
     props.src = largestImageSrc;
   }
 
-  return <img {...rest} {...props} loading={loading} alt={alt} />;
+  return <img {...consumerProps} {...props} loading={loading} alt={alt} />;
 }
