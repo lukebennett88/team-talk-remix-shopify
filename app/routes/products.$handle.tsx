@@ -1,10 +1,22 @@
-import type { LoaderFunction } from "remix";
-import { json, Link, useLoaderData } from "remix";
-import invariant from "tiny-invariant";
+import type { ActionFunction, LoaderFunction } from "remix";
+import {
+  Form,
+  json,
+  Link,
+  redirect,
+  useLoaderData,
+  useTransition,
+} from "remix";
 
-import { PRODUCTS_QUERY, SINGLE_PRODUCT_QUERY } from "~/queries";
+import {
+  CREATE_CHECKOUT_URL_MUTATION,
+  PRODUCTS_QUERY,
+  SINGLE_PRODUCT_QUERY,
+} from "~/queries";
 import { formatCurrency } from "~/utils/format-currency";
 import { shopifyClient } from "~/utils/shopify-client";
+
+const VARIANT_ID = "variantId";
 
 type LoaderData = {
   product: NonNullable<
@@ -15,7 +27,9 @@ type LoaderData = {
 
 export const loader: LoaderFunction = async ({ params }) => {
   const { handle } = params;
-  invariant(handle, "Product handle not found");
+  if (!handle) {
+    throw new Error("Product handle not found");
+  }
 
   const [singleProductResponse, relatedProductsResponse] = await Promise.all([
     await shopifyClient({
@@ -43,8 +57,43 @@ export const loader: LoaderFunction = async ({ params }) => {
   });
 };
 
+export const action: ActionFunction = async ({ params, request }) => {
+  const formData = await request.formData();
+  const variantId = formData.get(VARIANT_ID);
+  if (!variantId) {
+    // Ideally we'd show an out of stock message here before we get to this screen
+    // but this is just a basic example...
+    throw new Response("Variant not found", { status: 500 });
+  }
+
+  const {
+    data: { checkoutCreate },
+  } = await shopifyClient({
+    operation: CREATE_CHECKOUT_URL_MUTATION,
+    variables: {
+      input: { lineItems: [{ quantity: 1, variantId: variantId.toString() }] },
+    },
+  });
+
+  // Types are showing as `any` here, but it's potentially undefined (because of optional chaining)
+  // Ideally we'd handle this case, but again this is just a demo app...
+  const webUrl = checkoutCreate?.checkout?.webUrl;
+
+  return redirect(webUrl);
+};
+
 export default function ProductPage() {
   const { product, relatedProducts } = useLoaderData<LoaderData>();
+
+  let buttonText = `Pay ${formatCurrency(
+    product.priceRange.minVariantPrice.amount,
+    product.priceRange.minVariantPrice.currencyCode
+  )}`;
+
+  const transition = useTransition();
+  if (transition.state === "submitting") {
+    buttonText = "Submitting...";
+  }
 
   return (
     <main className="bg-white">
@@ -84,16 +133,20 @@ export default function ProductPage() {
 
             <p className="mt-6 text-gray-500">{product.description}</p>
 
-            <div className="mt-10 grid grid-cols-1 gap-x-6 gap-y-4 sm:grid-cols-2">
+            <Form
+              method="post"
+              className="mt-10 grid grid-cols-1 gap-x-6 gap-y-4 sm:grid-cols-2"
+            >
+              <input
+                type="hidden"
+                name={VARIANT_ID}
+                value={product.variants.edges[0].node.id}
+              />
               <button
-                type="button"
+                type="submit"
                 className="flex w-full items-center justify-center rounded-md border border-transparent bg-gray-900 py-3 px-8 text-base font-medium text-white hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 focus:ring-offset-gray-50"
               >
-                Pay{" "}
-                {formatCurrency(
-                  product.priceRange.minVariantPrice.amount,
-                  product.priceRange.minVariantPrice.currencyCode
-                )}
+                {buttonText}
               </button>
               <button
                 type="button"
@@ -101,7 +154,7 @@ export default function ProductPage() {
               >
                 Preview
               </button>
-            </div>
+            </Form>
 
             <div className="mt-10 border-t border-gray-200 pt-10">
               <h3 className="text-sm font-medium text-gray-900">License</h3>
