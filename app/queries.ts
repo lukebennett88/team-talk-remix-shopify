@@ -1,3 +1,4 @@
+import type { OperationData } from "@ts-gql/tag/no-transform";
 import { gql } from "@ts-gql/tag/no-transform";
 
 export const SINGLE_PRODUCT_QUERY = gql`
@@ -33,6 +34,7 @@ export const SINGLE_PRODUCT_QUERY = gql`
     }
   }
 ` as import("../__generated__/ts-gql/singleProductQuery").type;
+export type SingleProductQueryType = OperationData<typeof SINGLE_PRODUCT_QUERY>;
 
 export const PRODUCTS_QUERY = gql`
   query productsQuery($first: Int = 6) {
@@ -64,6 +66,7 @@ export const PRODUCTS_QUERY = gql`
     }
   }
 ` as import("../__generated__/ts-gql/productsQuery").type;
+export type ProductsQueryType = OperationData<typeof PRODUCTS_QUERY>;
 
 export const CREATE_CHECKOUT_URL_MUTATION = gql`
   mutation createCheckoutUrlMutation($input: CheckoutCreateInput!) {
@@ -75,3 +78,6 @@ export const CREATE_CHECKOUT_URL_MUTATION = gql`
     }
   }
 ` as import("../__generated__/ts-gql/createCheckoutUrlMutation").type;
+export type CreateCheckoutUrlMutationType = OperationData<
+  typeof CREATE_CHECKOUT_URL_MUTATION
+>;

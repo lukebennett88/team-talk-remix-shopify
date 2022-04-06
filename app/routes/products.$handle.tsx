@@ -9,6 +9,7 @@ import {
 } from "remix";
 
 import { OptimisedImage } from "~/components/optimised-image";
+import type { ProductsQueryType, SingleProductQueryType } from "~/queries";
 import {
   CREATE_CHECKOUT_URL_MUTATION,
   PRODUCTS_QUERY,
@@ -24,10 +25,8 @@ export const headers: HeadersFunction = () => {
 };
 
 type LoaderData = {
-  product: NonNullable<
-    typeof SINGLE_PRODUCT_QUERY["___type"]["result"]["productByHandle"]
-  >;
-  relatedProducts: typeof PRODUCTS_QUERY["___type"]["result"]["products"]["edges"];
+  product: NonNullable<SingleProductQueryType["productByHandle"]>;
+  relatedProducts: ProductsQueryType["products"]["edges"];
 };
 
 export const loader: LoaderFunction = async ({ params }) => {

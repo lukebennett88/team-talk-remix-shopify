@@ -2,12 +2,13 @@ import type { HeadersFunction, LoaderFunction } from "remix";
 import { json, Link, useLoaderData } from "remix";
 
 import { OptimisedImage } from "~/components/optimised-image";
+import type { ProductsQueryType } from "~/queries";
 import { PRODUCTS_QUERY } from "~/queries";
 import { formatCurrency } from "~/utils/format-currency";
 import { shopifyClient } from "~/utils/shopify-client";
 
 type LoaderData = {
-  products: typeof PRODUCTS_QUERY["___type"]["result"]["products"]["edges"];
+  products: ProductsQueryType["products"]["edges"];
 };
 
 export const loader: LoaderFunction = async () => {
