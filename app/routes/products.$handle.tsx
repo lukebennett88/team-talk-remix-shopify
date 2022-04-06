@@ -36,11 +36,11 @@ export const loader: LoaderFunction = async ({ params }) => {
   }
 
   const [singleProductResponse, relatedProductsResponse] = await Promise.all([
-    await shopifyClient({
+    shopifyClient({
       operation: SINGLE_PRODUCT_QUERY,
       variables: { handle },
     }),
-    await shopifyClient({
+    shopifyClient({
       operation: PRODUCTS_QUERY,
       variables: { first: 5 },
     }),
