@@ -6,7 +6,7 @@ node_modules
 .output
 
 __generated__
-/api/index.js
+/api/index.js*
 /app/styles/app.css
 /build/
 /public/build

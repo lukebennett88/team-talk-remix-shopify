@@ -1,4 +1,4 @@
-import { Link } from "remix";
+import { Link } from "@remix-run/react";
 
 export function Header() {
   return (
@@ -24,6 +24,7 @@ export function Header() {
             </Link>
           </div>
           <div className="flex flex-1 items-center justify-end">
+            {/* eslint-disable-next-line jsx-a11y/anchor-is-valid */}
             <a href="#" className="p-2 text-gray-400 hover:text-gray-500">
               <span className="sr-only">Search</span>
               <svg

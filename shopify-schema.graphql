@@ -89,7 +89,7 @@ type AppliedGiftCard implements Node {
 """
 An article in an online store blog.
 """
-type Article implements HasMetafields & Node {
+type Article implements HasMetafields & Node & OnlineStorePublishable {
   """
   The article's author.
   """
@@ -178,22 +178,22 @@ type Article implements HasMetafields & Node {
   """
   image(
     """
-    Crops the image according to the specified region. This argument is deprecated: Use `crop` on `Image.transformedSrc` instead.
+    Crops the image according to the specified region. This argument is deprecated: Use `Image.url(transform: { crop:})` instead.
     """
     crop: CropRegion
 
     """
-    Image height in pixels between 1 and 2048. This argument is deprecated: Use `maxHeight` on `Image.transformedSrc` instead.
+    Image height in pixels between 1 and 2048. This argument is deprecated: Use `Image.url(transform: { maxHeight:})` instead.
     """
     maxHeight: Int
 
     """
-    Image width in pixels between 1 and 2048. This argument is deprecated: Use `maxWidth` on `Image.transformedSrc` instead.
+    Image width in pixels between 1 and 2048. This argument is deprecated: Use `Image.url(transform: { maxWidth:})` instead.
     """
     maxWidth: Int
 
     """
-    Image size multiplier for high-resolution retina displays. Must be between 1 and 3. This argument is deprecated: Use `scale` on `Image.transformedSrc` instead.
+    Image size multiplier for high-resolution retina displays. Must be between 1 and 3. This argument is deprecated: Use `Image.url(transform: { scale:})` instead.
     """
     scale: Int = 1
   ): Image
@@ -203,12 +203,12 @@ type Article implements HasMetafields & Node {
   """
   metafield(
     """
-    Identifier for the metafield (maximum of 30 characters).
+    The identifier for the metafield.
     """
     key: String!
 
     """
-    Container for a set of metafields (maximum of 20 characters).
+    A container for a set of metafields.
     """
     namespace: String!
   ): Metafield
@@ -238,7 +238,7 @@ type Article implements HasMetafields & Node {
     last: Int
 
     """
-    Container for a set of metafields (maximum of 20 characters).
+    Container for a set of metafields.
     """
     namespace: String
 
@@ -248,8 +248,13 @@ type Article implements HasMetafields & Node {
     reverse: Boolean = false
   ): MetafieldConnection!
     @deprecated(
-      reason: "The `metafields` field will be removed in the future in favor of using [aliases](https://graphql.org/learn/queries/#aliases) with the `metafield` field.\n"
+      reason: "As of 2022-07, the paginated `metafields` field has been repurposed to require a list of metafield identifiers.\n"
     )
+
+  """
+  The URL used for viewing the resource on the shop's Online Store. Returns `null` if the resource is currently not published to the Online Store sales channel.
+  """
+  onlineStoreUrl: URL
 
   """
   The date and time when the article was published.
@@ -445,7 +450,7 @@ type AvailableShippingRates {
 """
 An online store blog.
 """
-type Blog implements HasMetafields & Node {
+type Blog implements HasMetafields & Node & OnlineStorePublishable {
   """
   Find an article by its handle.
   """
@@ -512,12 +517,12 @@ type Blog implements HasMetafields & Node {
   """
   metafield(
     """
-    Identifier for the metafield (maximum of 30 characters).
+    The identifier for the metafield.
     """
     key: String!
 
     """
-    Container for a set of metafields (maximum of 20 characters).
+    A container for a set of metafields.
     """
     namespace: String!
   ): Metafield
@@ -547,7 +552,7 @@ type Blog implements HasMetafields & Node {
     last: Int
 
     """
-    Container for a set of metafields (maximum of 20 characters).
+    Container for a set of metafields.
     """
     namespace: String
 
@@ -557,8 +562,13 @@ type Blog implements HasMetafields & Node {
     reverse: Boolean = false
   ): MetafieldConnection!
     @deprecated(
-      reason: "The `metafields` field will be removed in the future in favor of using [aliases](https://graphql.org/learn/queries/#aliases) with the `metafield` field.\n"
+      reason: "As of 2022-07, the paginated `metafields` field has been repurposed to require a list of metafield identifiers.\n"
     )
+
+  """
+  The URL used for viewing the resource on the shop's Online Store. Returns `null` if the resource is currently not published to the Online Store sales channel.
+  """
+  onlineStoreUrl: URL
 
   """
   The blog's SEO information.
@@ -661,6 +671,545 @@ enum CardBrand {
 }
 
 """
+A cart represents the merchandise that a buyer intends to purchase, and the estimated cost associated with the cart. To learn how to interact with a cart during a customer's session, refer to [Manage a cart with the Storefront API](https://shopify.dev/api/examples/cart).
+"""
+type Cart implements Node {
+  """
+  The attributes associated with the cart. Attributes are represented as key-value pairs.
+  """
+  attributes: [Attribute!]!
+
+  """
+  Information about the buyer that is interacting with the cart.
+  """
+  buyerIdentity: CartBuyerIdentity!
+
+  """
+  The URL of the checkout for the cart.
+  """
+  checkoutUrl: URL!
+
+  """
+  The date and time when the cart was created.
+  """
+  createdAt: DateTime!
+
+  "The case-insensitive discount codes that the customer added at checkout.\n"
+  discountCodes: [CartDiscountCode!]!
+
+  """
+  The estimated costs that the buyer will pay at checkout. The estimated costs are subject to change and changes will be reflected at checkout. The `estimatedCost` field uses the `buyerIdentity` field to determine [international pricing](https://shopify.dev/api/examples/international-pricing#create-a-cart).
+  """
+  estimatedCost: CartEstimatedCost! @deprecated(reason: "Use `cost` instead")
+
+  """
+  A globally-unique identifier.
+  """
+  id: ID!
+
+  """
+  A list of lines containing information about the items the customer intends to purchase.
+  """
+  lines(
+    """
+    Returns the elements that come after the specified cursor.
+    """
+    after: String
+
+    """
+    Returns the elements that come before the specified cursor.
+    """
+    before: String
+
+    """
+    Returns up to the first `n` elements from the list.
+    """
+    first: Int
+
+    """
+    Returns up to the last `n` elements from the list.
+    """
+    last: Int
+
+    """
+    Reverse the order of the underlying list.
+    """
+    reverse: Boolean = false
+  ): CartLineConnection!
+
+  """
+  A note that is associated with the cart. For example, the note can be a personalized message to the buyer.
+  """
+  note: String
+
+  """
+  The date and time when the cart was updated.
+  """
+  updatedAt: DateTime!
+}
+
+"""
+Return type for `cartAttributesUpdate` mutation.
+"""
+type CartAttributesUpdatePayload {
+  """
+  The updated cart.
+  """
+  cart: Cart
+
+  """
+  The list of errors that occurred from executing the mutation.
+  """
+  userErrors: [CartUserError!]!
+}
+
+"""
+The discounts automatically applied to the cart line based on prerequisites that have been met.
+"""
+type CartAutomaticDiscountAllocation implements CartDiscountAllocation {
+  """
+  The discounted amount that has been applied to the cart line.
+  """
+  discountedAmount: MoneyV2!
+
+  """
+  The title of the allocated discount.
+  """
+  title: String!
+}
+
+"""
+Represents information about the buyer that is interacting with the cart.
+"""
+type CartBuyerIdentity {
+  """
+  The country where the buyer is located.
+  """
+  countryCode: CountryCode
+
+  """
+  The customer account associated with the cart.
+  """
+  customer: Customer
+
+  """
+  The email address of the buyer that is interacting with the cart.
+  """
+  email: String
+
+  """
+  The phone number of the buyer that is interacting with the cart.
+  """
+  phone: String
+}
+
+"Specifies the input fields to update the buyer information associated with a cart.\nBuyer identity is used to determine\n[international pricing](https://shopify.dev/api/examples/international-pricing#create-a-checkout)\nand should match the customer's shipping address.\n"
+input CartBuyerIdentityInput {
+  """
+  The country where the buyer is located.
+  """
+  countryCode: CountryCode
+
+  """
+  The access token used to identify the customer associated with the cart.
+  """
+  customerAccessToken: String
+
+  """
+  The email address of the buyer that is interacting with the cart.
+  """
+  email: String
+
+  """
+  The phone number of the buyer that is interacting with the cart.
+  """
+  phone: String
+}
+
+"""
+Return type for `cartBuyerIdentityUpdate` mutation.
+"""
+type CartBuyerIdentityUpdatePayload {
+  """
+  The updated cart.
+  """
+  cart: Cart
+
+  """
+  The list of errors that occurred from executing the mutation.
+  """
+  userErrors: [CartUserError!]!
+}
+
+"""
+The discount that has been applied to the cart line using a discount code.
+"""
+type CartCodeDiscountAllocation implements CartDiscountAllocation {
+  """
+  The code used to apply the discount.
+  """
+  code: String!
+
+  """
+  The discounted amount that has been applied to the cart line.
+  """
+  discountedAmount: MoneyV2!
+}
+
+"""
+Return type for `cartCreate` mutation.
+"""
+type CartCreatePayload {
+  """
+  The new cart.
+  """
+  cart: Cart
+
+  """
+  The list of errors that occurred from executing the mutation.
+  """
+  userErrors: [CartUserError!]!
+}
+
+"""
+The discounts that have been applied to the cart line.
+"""
+interface CartDiscountAllocation {
+  """
+  The discounted amount that has been applied to the cart line.
+  """
+  discountedAmount: MoneyV2!
+}
+
+"""
+The discount codes applied to the cart.
+"""
+type CartDiscountCode {
+  """
+  Whether the discount code is applicable to the cart's current contents.
+  """
+  applicable: Boolean!
+
+  """
+  The code for the discount.
+  """
+  code: String!
+}
+
+"""
+Return type for `cartDiscountCodesUpdate` mutation.
+"""
+type CartDiscountCodesUpdatePayload {
+  """
+  The updated cart.
+  """
+  cart: Cart
+
+  """
+  The list of errors that occurred from executing the mutation.
+  """
+  userErrors: [CartUserError!]!
+}
+
+"""
+Possible error codes that can be returned by `CartUserError`.
+"""
+enum CartErrorCode {
+  """
+  The input value is invalid.
+  """
+  INVALID
+
+  """
+  Merchandise line was not found in cart.
+  """
+  INVALID_MERCHANDISE_LINE
+
+  """
+  The input value should be less than the maximum value allowed.
+  """
+  LESS_THAN
+
+  """
+  Missing discount code.
+  """
+  MISSING_DISCOUNT_CODE
+
+  """
+  Missing note.
+  """
+  MISSING_NOTE
+}
+
+"The estimated costs that the buyer will pay at checkout.\nIt uses [`CartBuyerIdentity`](https://shopify.dev/api/storefront/reference/cart/cartbuyeridentity) to determine\n[international pricing](https://shopify.dev/api/examples/international-pricing#create-a-cart).\n"
+type CartEstimatedCost {
+  """
+  The estimated amount, before taxes and discounts, for the customer to pay.
+  """
+  subtotalAmount: MoneyV2!
+
+  """
+  The estimated total amount for the customer to pay.
+  """
+  totalAmount: MoneyV2!
+
+  """
+  The estimated duty amount for the customer to pay at checkout.
+  """
+  totalDutyAmount: MoneyV2
+
+  """
+  The estimated tax amount for the customer to pay at checkout.
+  """
+  totalTaxAmount: MoneyV2
+}
+
+"""
+Specifies the input fields to create a cart.
+"""
+input CartInput {
+  """
+  An array of key-value pairs that contains additional information about the cart.
+  """
+  attributes: [AttributeInput!]
+
+  """
+  The customer associated with the cart. Used to determine [international pricing](https://shopify.dev/api/examples/international-pricing#create-a-checkout). Buyer identity should match the customer's shipping address.
+  """
+  buyerIdentity: CartBuyerIdentityInput
+
+  "The case-insensitive discount codes that the customer added at checkout.\n"
+  discountCodes: [String!]
+
+  """
+  A list of merchandise lines to add to the cart.
+  """
+  lines: [CartLineInput!]
+
+  """
+  A note that is associated with the cart. For example, the note can be a personalized message to the buyer.
+  """
+  note: String
+}
+
+"""
+Represents information about the merchandise in the cart.
+"""
+type CartLine implements Node {
+  """
+  The attributes associated with the cart line. Attributes are represented as key-value pairs.
+  """
+  attributes: [Attribute!]!
+
+  """
+  The discounts that have been applied to the cart line.
+  """
+  discountAllocations: [CartDiscountAllocation!]!
+
+  """
+  The estimated cost of the merchandise that the buyer will pay for at checkout. The estimated costs are subject to change and changes will be reflected at checkout.
+  """
+  estimatedCost: CartLineEstimatedCost!
+    @deprecated(reason: "Use `cost` instead")
+
+  """
+  A globally-unique identifier.
+  """
+  id: ID!
+
+  """
+  The merchandise that the buyer intends to purchase.
+  """
+  merchandise: Merchandise!
+
+  """
+  The quantity of the merchandise that the customer intends to purchase.
+  """
+  quantity: Int!
+
+  """
+  The selling plan associated with the cart line and the effect that each selling plan has on variants when they're purchased.
+  """
+  sellingPlanAllocation: SellingPlanAllocation
+}
+
+"An auto-generated type for paginating through multiple CartLines.\n"
+type CartLineConnection {
+  """
+  A list of edges.
+  """
+  edges: [CartLineEdge!]!
+
+  """
+  Information to aid in pagination.
+  """
+  pageInfo: PageInfo!
+}
+
+"An auto-generated type which holds one CartLine and a cursor during pagination.\n"
+type CartLineEdge {
+  """
+  A cursor for use in pagination.
+  """
+  cursor: String!
+
+  """
+  The item at the end of CartLineEdge.
+  """
+  node: CartLine!
+}
+
+"""
+The estimated cost of the merchandise line that the buyer will pay at checkout.
+"""
+type CartLineEstimatedCost {
+  """
+  The estimated cost of the merchandise line before discounts.
+  """
+  subtotalAmount: MoneyV2!
+
+  """
+  The estimated total cost of the merchandise line.
+  """
+  totalAmount: MoneyV2!
+}
+
+"""
+Specifies the input fields to create a merchandise line on a cart.
+"""
+input CartLineInput {
+  """
+  An array of key-value pairs that contains additional information about the merchandise line.
+  """
+  attributes: [AttributeInput!]
+
+  """
+  The identifier of the merchandise that the buyer intends to purchase.
+  """
+  merchandiseId: ID!
+
+  """
+  The quantity of the merchandise.
+  """
+  quantity: Int = 1
+
+  """
+  The identifier of the selling plan that the merchandise is being purchased with.
+  """
+  sellingPlanId: ID
+}
+
+"""
+Specifies the input fields to update a line item on a cart.
+"""
+input CartLineUpdateInput {
+  """
+  An array of key-value pairs that contains additional information about the merchandise line.
+  """
+  attributes: [AttributeInput!]
+
+  """
+  The identifier of the merchandise line.
+  """
+  id: ID!
+
+  """
+  The identifier of the merchandise for the line item.
+  """
+  merchandiseId: ID
+
+  """
+  The quantity of the line item.
+  """
+  quantity: Int
+
+  """
+  The identifier of the selling plan that the merchandise is being purchased with.
+  """
+  sellingPlanId: ID
+}
+
+"""
+Return type for `cartLinesAdd` mutation.
+"""
+type CartLinesAddPayload {
+  """
+  The updated cart.
+  """
+  cart: Cart
+
+  """
+  The list of errors that occurred from executing the mutation.
+  """
+  userErrors: [CartUserError!]!
+}
+
+"""
+Return type for `cartLinesRemove` mutation.
+"""
+type CartLinesRemovePayload {
+  """
+  The updated cart.
+  """
+  cart: Cart
+
+  """
+  The list of errors that occurred from executing the mutation.
+  """
+  userErrors: [CartUserError!]!
+}
+
+"""
+Return type for `cartLinesUpdate` mutation.
+"""
+type CartLinesUpdatePayload {
+  """
+  The updated cart.
+  """
+  cart: Cart
+
+  """
+  The list of errors that occurred from executing the mutation.
+  """
+  userErrors: [CartUserError!]!
+}
+
+"""
+Return type for `cartNoteUpdate` mutation.
+"""
+type CartNoteUpdatePayload {
+  """
+  The updated cart.
+  """
+  cart: Cart
+
+  """
+  The list of errors that occurred from executing the mutation.
+  """
+  userErrors: [CartUserError!]!
+}
+
+"""
+Represents an error that happens during execution of a cart mutation.
+"""
+type CartUserError implements DisplayableError {
+  """
+  The error code.
+  """
+  code: CartErrorCode
+
+  """
+  The path to the input field that caused the error.
+  """
+  field: [String!]
+
+  """
+  The error message.
+  """
+  message: String!
+}
+
+"""
 A container for all the information required to checkout items and pay.
 """
 type Checkout implements Node {
@@ -688,7 +1237,7 @@ type Checkout implements Node {
   createdAt: DateTime!
 
   """
-  The currency code for the Checkout.
+  The currency code for the checkout.
   """
   currencyCode: CurrencyCode!
 
@@ -837,12 +1386,12 @@ type Checkout implements Node {
   subtotalPriceV2: MoneyV2!
 
   """
-  Specifies if the Checkout is tax exempt.
+  Whether the checkout is tax exempt.
   """
   taxExempt: Boolean!
 
   """
-  Specifies if taxes are included in the line item and shipping line prices.
+  Whether taxes are included in the line item and shipping line prices.
   """
   taxesIncluded: Boolean!
 
@@ -1968,7 +2517,7 @@ type CheckoutUserError implements DisplayableError {
 """
 A collection represents a grouping of products that a shop owner can create to organize them or make their shops easier to browse.
 """
-type Collection implements HasMetafields & Node {
+type Collection implements HasMetafields & Node & OnlineStorePublishable {
   """
   Stripped description of the collection, single line with HTML tags removed.
   """
@@ -1997,22 +2546,22 @@ type Collection implements HasMetafields & Node {
   """
   image(
     """
-    Crops the image according to the specified region. This argument is deprecated: Use `crop` on `Image.transformedSrc` instead.
+    Crops the image according to the specified region. This argument is deprecated: Use `Image.url(transform: { crop:})` instead.
     """
     crop: CropRegion
 
     """
-    Image height in pixels between 1 and 2048. This argument is deprecated: Use `maxHeight` on `Image.transformedSrc` instead.
+    Image height in pixels between 1 and 2048. This argument is deprecated: Use `Image.url(transform: { maxHeight:})` instead.
     """
     maxHeight: Int
 
     """
-    Image width in pixels between 1 and 2048. This argument is deprecated: Use `maxWidth` on `Image.transformedSrc` instead.
+    Image width in pixels between 1 and 2048. This argument is deprecated: Use `Image.url(transform: { maxWidth:})` instead.
     """
     maxWidth: Int
 
     """
-    Image size multiplier for high-resolution retina displays. Must be between 1 and 3. This argument is deprecated: Use `scale` on `Image.transformedSrc` instead.
+    Image size multiplier for high-resolution retina displays. Must be between 1 and 3. This argument is deprecated: Use `Image.url(transform: { scale:})` instead.
     """
     scale: Int = 1
   ): Image
@@ -2022,12 +2571,12 @@ type Collection implements HasMetafields & Node {
   """
   metafield(
     """
-    Identifier for the metafield (maximum of 30 characters).
+    The identifier for the metafield.
     """
     key: String!
 
     """
-    Container for a set of metafields (maximum of 20 characters).
+    A container for a set of metafields.
     """
     namespace: String!
   ): Metafield
@@ -2057,7 +2606,7 @@ type Collection implements HasMetafields & Node {
     last: Int
 
     """
-    Container for a set of metafields (maximum of 20 characters).
+    Container for a set of metafields.
     """
     namespace: String
 
@@ -2067,8 +2616,13 @@ type Collection implements HasMetafields & Node {
     reverse: Boolean = false
   ): MetafieldConnection!
     @deprecated(
-      reason: "The `metafields` field will be removed in the future in favor of using [aliases](https://graphql.org/learn/queries/#aliases) with the `metafield` field.\n"
+      reason: "As of 2022-07, the paginated `metafields` field has been repurposed to require a list of metafield identifiers.\n"
     )
+
+  """
+  The URL used for viewing the resource on the shop's Online Store. Returns `null` if the resource is currently not published to the Online Store sales channel.
+  """
+  onlineStoreUrl: URL
 
   """
   List of products in the collection.
@@ -2261,9 +2815,7 @@ type Country {
   unitSystem: UnitSystem!
 }
 
-"""
-ISO 3166-1 alpha-2 country codes with some differences.
-"""
+"The code designating a country/region, which generally follows ISO 3166-1 alpha-2 guidelines.\nIf a territory doesn't have a country code value in the `CountryCode` enum, then it might be considered a subdivision\nof another country. For example, the territories associated with Spain are represented by the country code `ES`,\nand the territories associated with the United States of America are represented by the country code `US`.\n"
 enum CountryCode {
   """
   Ascension Island.
@@ -3768,6 +4320,9 @@ enum CurrencyCode {
   Belarusian Ruble (BYR).
   """
   BYR
+    @deprecated(
+      reason: "`BYR` is deprecated. Use `BYN` available from version `2021-01` onwards instead."
+    )
 
   """
   Belize Dollar (BZD).
@@ -4293,6 +4848,9 @@ enum CurrencyCode {
   Sao Tome And Principe Dobra (STD).
   """
   STD
+    @deprecated(
+      reason: "`STD` is deprecated. Use `STN` available from version `2022-07` onwards instead."
+    )
 
   """
   Syrian Pound (SYP).
@@ -4378,6 +4936,9 @@ enum CurrencyCode {
   Venezuelan Bolivares (VEF).
   """
   VEF
+    @deprecated(
+      reason: "`VEF` is deprecated. Use `VES` available from version `2020-10` onwards instead."
+    )
 
   """
   Venezuelan Bolivares (VES).
@@ -4524,12 +5085,12 @@ type Customer implements HasMetafields {
   """
   metafield(
     """
-    Identifier for the metafield (maximum of 30 characters).
+    The identifier for the metafield.
     """
     key: String!
 
     """
-    Container for a set of metafields (maximum of 20 characters).
+    A container for a set of metafields.
     """
     namespace: String!
   ): Metafield
@@ -4559,7 +5120,7 @@ type Customer implements HasMetafields {
     last: Int
 
     """
-    Container for a set of metafields (maximum of 20 characters).
+    Container for a set of metafields.
     """
     namespace: String
 
@@ -4569,7 +5130,7 @@ type Customer implements HasMetafields {
     reverse: Boolean = false
   ): MetafieldConnection!
     @deprecated(
-      reason: "The `metafields` field will be removed in the future in favor of using [aliases](https://graphql.org/learn/queries/#aliases) with the `metafield` field.\n"
+      reason: "As of 2022-07, the paginated `metafields` field has been repurposed to require a list of metafield identifiers.\n"
     )
 
   """
@@ -5164,7 +5725,7 @@ type CustomerUserError implements DisplayableError {
   message: String!
 }
 
-"Represents an [ISO 8601](https://en.wikipedia.org/wiki/ISO_8601)-encoded date and time string.\nFor example, 3:30 pm on September 7, 2019 in the time zone of UTC (Coordinated Universal Time) is\nrepresented as `\"2019-09-07T15:50:00Z`\".\n"
+"Represents an [ISO 8601](https://en.wikipedia.org/wiki/ISO_8601)-encoded date and time string.\nFor example, 3:50 pm on September 7, 2019 in the time zone of UTC (Coordinated Universal Time) is\nrepresented as `\"2019-09-07T15:50:00Z`\".\n"
 scalar DateTime
 
 "A signed decimal number, which supports arbitrary precision and is serialized as a string.\n\nExample values: `\"29.99\"`, `\"29.999\"`.\n"
@@ -5248,7 +5809,7 @@ enum DiscountApplicationAllocationMethod {
   """
   The value is specifically applied onto a particular line.
   """
-  ONE
+  ONE @deprecated(reason: "Use ACROSS instead.")
 }
 
 "An auto-generated type for paginating through multiple DiscountApplications.\n"
@@ -5277,7 +5838,7 @@ type DiscountApplicationEdge {
   node: DiscountApplication!
 }
 
-"Which lines on the order that the discount is allocated over, of the type\ndefined by the Discount Application's target_type.\n"
+"The lines on the order to which the discount is applied, of the type defined by\nthe discount application's `targetType`. For example, the value `ENTITLED`, combined with a `targetType` of\n`LINE_ITEM`, applies the discount on all line items that are entitled to the discount.\nThe value `ALL`, combined with a `targetType` of `SHIPPING_LINE`, applies the discount on all shipping lines.\n"
 enum DiscountApplicationTargetSelection {
   """
   The discount is allocated onto all the lines.
@@ -5285,7 +5846,7 @@ enum DiscountApplicationTargetSelection {
   ALL
 
   """
-  The discount is allocated onto only the lines it is entitled for.
+  The discount is allocated onto only the lines that it's entitled for.
   """
   ENTITLED
 
@@ -5542,12 +6103,12 @@ interface HasMetafields {
   """
   metafield(
     """
-    Identifier for the metafield (maximum of 30 characters).
+    The identifier for the metafield.
     """
     key: String!
 
     """
-    Container for a set of metafields (maximum of 20 characters).
+    A container for a set of metafields.
     """
     namespace: String!
   ): Metafield
@@ -5577,7 +6138,7 @@ interface HasMetafields {
     last: Int
 
     """
-    Container for a set of metafields (maximum of 20 characters).
+    Container for a set of metafields.
     """
     namespace: String
 
@@ -5587,7 +6148,7 @@ interface HasMetafields {
     reverse: Boolean = false
   ): MetafieldConnection!
     @deprecated(
-      reason: "The `metafields` field will be removed in the future in favor of using [aliases](https://graphql.org/learn/queries/#aliases) with the `metafield` field.\n"
+      reason: "As of 2022-07, the paginated `metafields` field has been repurposed to require a list of metafield identifiers.\n"
     )
 }
 
@@ -6157,6 +6718,11 @@ type MediaImage implements Media & Node {
   previewImage: Image
 }
 
+"""
+The merchandise to be purchased at checkout.
+"""
+union Merchandise = ProductVariant
+
 "Metafields represent custom metadata attached to a resource. Metafields can be sorted into namespaces and are\ncomprised of keys, values, and value types.\n"
 type Metafield implements Node {
   """
@@ -6395,6 +6961,117 @@ The schema’s entry-point for mutations. This acts as the public, top-level API
 """
 type Mutation {
   """
+  Updates the attributes on a cart.
+  """
+  cartAttributesUpdate(
+    """
+    An array of key-value pairs that contains additional information about the cart.
+    """
+    attributes: [AttributeInput!]!
+
+    """
+    The ID of the cart.
+    """
+    cartId: ID!
+  ): CartAttributesUpdatePayload
+
+  "Updates customer information associated with a cart.\nBuyer identity is used to determine\n[international pricing](https://shopify.dev/api/examples/international-pricing#create-a-checkout)\nand should match the customer's shipping address.\n"
+  cartBuyerIdentityUpdate(
+    """
+    The customer associated with the cart. Used to determine [international pricing](https://shopify.dev/api/examples/international-pricing#create-a-checkout). Buyer identity should match the customer's shipping address.
+    """
+    buyerIdentity: CartBuyerIdentityInput!
+
+    """
+    The ID of the cart.
+    """
+    cartId: ID!
+  ): CartBuyerIdentityUpdatePayload
+
+  """
+  Creates a new cart.
+  """
+  cartCreate(
+    """
+    The fields used to create a cart.
+    """
+    input: CartInput
+  ): CartCreatePayload
+
+  """
+  Updates the discount codes applied to the cart.
+  """
+  cartDiscountCodesUpdate(
+    """
+    The ID of the cart.
+    """
+    cartId: ID!
+
+    "The case-insensitive discount codes that the customer added at checkout.\n"
+    discountCodes: [String!]
+  ): CartDiscountCodesUpdatePayload
+
+  """
+  Adds a merchandise line to the cart.
+  """
+  cartLinesAdd(
+    """
+    The ID of the cart.
+    """
+    cartId: ID!
+
+    """
+    A list of merchandise lines to add to the cart.
+    """
+    lines: [CartLineInput!]!
+  ): CartLinesAddPayload
+
+  """
+  Removes one or more merchandise lines from the cart.
+  """
+  cartLinesRemove(
+    """
+    The ID of the cart.
+    """
+    cartId: ID!
+
+    """
+    The merchandise line IDs to remove.
+    """
+    lineIds: [ID!]!
+  ): CartLinesRemovePayload
+
+  """
+  Updates one or more merchandise lines on a cart.
+  """
+  cartLinesUpdate(
+    """
+    The ID of the cart.
+    """
+    cartId: ID!
+
+    """
+    The merchandise lines to update.
+    """
+    lines: [CartLineUpdateInput!]!
+  ): CartLinesUpdatePayload
+
+  """
+  Updates the note on the cart.
+  """
+  cartNoteUpdate(
+    """
+    The ID of the cart.
+    """
+    cartId: ID!
+
+    """
+    The note on the cart.
+    """
+    note: String
+  ): CartNoteUpdatePayload
+
+  """
   Updates the attributes of a checkout if `allowPartialAddresses` is `true`.
   """
   checkoutAttributesUpdate(
@@ -6612,7 +7289,7 @@ type Mutation {
   ): CheckoutDiscountCodeApplyV2Payload
 
   """
-  Removes the applied discount from an existing checkout.
+  Removes the applied discounts from an existing checkout.
   """
   checkoutDiscountCodeRemove(
     """
@@ -7024,6 +7701,16 @@ interface Node {
 }
 
 """
+Represents a resource that can be published to the Online Store sales channel.
+"""
+interface OnlineStorePublishable {
+  """
+  The URL used for viewing the resource on the shop's Online Store. Returns `null` if the resource is currently not published to the Online Store sales channel.
+  """
+  onlineStoreUrl: URL
+}
+
+"""
 An order is a customer’s completed request to purchase one or more products from a shop. An order is created when a customer completes the checkout process, during which time they provides an email address, billing address and payment information.
 """
 type Order implements HasMetafields & Node {
@@ -7162,12 +7849,12 @@ type Order implements HasMetafields & Node {
   """
   metafield(
     """
-    Identifier for the metafield (maximum of 30 characters).
+    The identifier for the metafield.
     """
     key: String!
 
     """
-    Container for a set of metafields (maximum of 20 characters).
+    A container for a set of metafields.
     """
     namespace: String!
   ): Metafield
@@ -7197,7 +7884,7 @@ type Order implements HasMetafields & Node {
     last: Int
 
     """
-    Container for a set of metafields (maximum of 20 characters).
+    Container for a set of metafields.
     """
     namespace: String
 
@@ -7207,7 +7894,7 @@ type Order implements HasMetafields & Node {
     reverse: Boolean = false
   ): MetafieldConnection!
     @deprecated(
-      reason: "The `metafields` field will be removed in the future in favor of using [aliases](https://graphql.org/learn/queries/#aliases) with the `metafield` field.\n"
+      reason: "As of 2022-07, the paginated `metafields` field has been repurposed to require a list of metafield identifiers.\n"
     )
 
   "Unique identifier for the order that appears on the order.\nFor example, _#1000_ or _Store1001.\n"
@@ -7554,7 +8241,7 @@ enum OrderSortKeys {
 """
 Shopify merchants can create pages to hold static HTML content. Each Page object represents a custom page on the online store.
 """
-type Page implements HasMetafields & Node {
+type Page implements HasMetafields & Node & OnlineStorePublishable {
   """
   The description of the page, complete with HTML formatting.
   """
@@ -7585,12 +8272,12 @@ type Page implements HasMetafields & Node {
   """
   metafield(
     """
-    Identifier for the metafield (maximum of 30 characters).
+    The identifier for the metafield.
     """
     key: String!
 
     """
-    Container for a set of metafields (maximum of 20 characters).
+    A container for a set of metafields.
     """
     namespace: String!
   ): Metafield
@@ -7620,7 +8307,7 @@ type Page implements HasMetafields & Node {
     last: Int
 
     """
-    Container for a set of metafields (maximum of 20 characters).
+    Container for a set of metafields.
     """
     namespace: String
 
@@ -7630,8 +8317,13 @@ type Page implements HasMetafields & Node {
     reverse: Boolean = false
   ): MetafieldConnection!
     @deprecated(
-      reason: "The `metafields` field will be removed in the future in favor of using [aliases](https://graphql.org/learn/queries/#aliases) with the `metafield` field.\n"
+      reason: "As of 2022-07, the paginated `metafields` field has been repurposed to require a list of metafield identifiers.\n"
     )
+
+  """
+  The URL used for viewing the resource on the shop's Online Store. Returns `null` if the resource is currently not published to the Online Store sales channel.
+  """
+  onlineStoreUrl: URL
 
   """
   The page's SEO information.
@@ -7764,7 +8456,7 @@ type Payment implements Node {
   nextActionUrl: URL
 
   """
-  Whether or not the payment is still processing asynchronously.
+  Whether the payment is still processing asynchronously.
   """
   ready: Boolean!
 
@@ -7839,6 +8531,11 @@ enum PaymentTokenType {
   SHOPIFY_PAY
 
   """
+  Stripe token type.
+  """
+  STRIPE_VAULT_TOKEN
+
+  """
   Vault payment token type.
   """
   VAULT
@@ -7863,7 +8560,7 @@ union PricingValue = MoneyV2 | PricingPercentageValue
 A product represents an individual item for sale in a Shopify store. Products are often physical, but they don't have to be.
 For example, a digital download (such as a movie, music or ebook file) also qualifies as a product, as do services (such as equipment rental, work for hire, customization of another product or an extended warranty).
 """
-type Product implements HasMetafields & Node {
+type Product implements HasMetafields & Node & OnlineStorePublishable {
   """
   Indicates if at least one product variant is available for sale.
   """
@@ -7947,7 +8644,7 @@ type Product implements HasMetafields & Node {
     before: String
 
     """
-    Crops the image according to the specified region. This argument is deprecated: Use `crop` on `Image.transformedSrc` instead.
+    Crops the image according to the specified region. This argument is deprecated: Use `Image.url(transform: { crop:})` instead.
     """
     crop: CropRegion
 
@@ -7962,12 +8659,12 @@ type Product implements HasMetafields & Node {
     last: Int
 
     """
-    Image height in pixels between 1 and 2048. This argument is deprecated: Use `maxHeight` on `Image.transformedSrc` instead.
+    Image height in pixels between 1 and 2048. This argument is deprecated: Use `Image.url(transform: { maxHeight:})` instead.
     """
     maxHeight: Int
 
     """
-    Image width in pixels between 1 and 2048. This argument is deprecated: Use `maxWidth` on `Image.transformedSrc` instead.
+    Image width in pixels between 1 and 2048. This argument is deprecated: Use `Image.url(transform: { maxWidth:})` instead.
     """
     maxWidth: Int
 
@@ -7977,7 +8674,7 @@ type Product implements HasMetafields & Node {
     reverse: Boolean = false
 
     """
-    Image size multiplier for high-resolution retina displays. Must be between 1 and 3. This argument is deprecated: Use `scale` on `Image.transformedSrc` instead.
+    Image size multiplier for high-resolution retina displays. Must be between 1 and 3. This argument is deprecated: Use `Image.url(transform: { scale:})` instead.
     """
     scale: Int = 1
 
@@ -8027,12 +8724,12 @@ type Product implements HasMetafields & Node {
   """
   metafield(
     """
-    Identifier for the metafield (maximum of 30 characters).
+    The identifier for the metafield.
     """
     key: String!
 
     """
-    Container for a set of metafields (maximum of 20 characters).
+    A container for a set of metafields.
     """
     namespace: String!
   ): Metafield
@@ -8062,7 +8759,7 @@ type Product implements HasMetafields & Node {
     last: Int
 
     """
-    Container for a set of metafields (maximum of 20 characters).
+    Container for a set of metafields.
     """
     namespace: String
 
@@ -8072,7 +8769,7 @@ type Product implements HasMetafields & Node {
     reverse: Boolean = false
   ): MetafieldConnection!
     @deprecated(
-      reason: "The `metafields` field will be removed in the future in favor of using [aliases](https://graphql.org/learn/queries/#aliases) with the `metafield` field.\n"
+      reason: "As of 2022-07, the paginated `metafields` field has been repurposed to require a list of metafield identifiers.\n"
     )
 
   """
@@ -8500,22 +9197,22 @@ type ProductVariant implements HasMetafields & Node {
   "Image associated with the product variant. This field falls back to the product image if no image is available.\n"
   image(
     """
-    Crops the image according to the specified region. This argument is deprecated: Use `crop` on `Image.transformedSrc` instead.
+    Crops the image according to the specified region. This argument is deprecated: Use `Image.url(transform: { crop:})` instead.
     """
     crop: CropRegion
 
     """
-    Image height in pixels between 1 and 2048. This argument is deprecated: Use `maxHeight` on `Image.transformedSrc` instead.
+    Image height in pixels between 1 and 2048. This argument is deprecated: Use `Image.url(transform: { maxHeight:})` instead.
     """
     maxHeight: Int
 
     """
-    Image width in pixels between 1 and 2048. This argument is deprecated: Use `maxWidth` on `Image.transformedSrc` instead.
+    Image width in pixels between 1 and 2048. This argument is deprecated: Use `Image.url(transform: { maxWidth:})` instead.
     """
     maxWidth: Int
 
     """
-    Image size multiplier for high-resolution retina displays. Must be between 1 and 3. This argument is deprecated: Use `scale` on `Image.transformedSrc` instead.
+    Image size multiplier for high-resolution retina displays. Must be between 1 and 3. This argument is deprecated: Use `Image.url(transform: { scale:})` instead.
     """
     scale: Int = 1
   ): Image
@@ -8525,12 +9222,12 @@ type ProductVariant implements HasMetafields & Node {
   """
   metafield(
     """
-    Identifier for the metafield (maximum of 30 characters).
+    The identifier for the metafield.
     """
     key: String!
 
     """
-    Container for a set of metafields (maximum of 20 characters).
+    A container for a set of metafields.
     """
     namespace: String!
   ): Metafield
@@ -8560,7 +9257,7 @@ type ProductVariant implements HasMetafields & Node {
     last: Int
 
     """
-    Container for a set of metafields (maximum of 20 characters).
+    Container for a set of metafields.
     """
     namespace: String
 
@@ -8570,7 +9267,7 @@ type ProductVariant implements HasMetafields & Node {
     reverse: Boolean = false
   ): MetafieldConnection!
     @deprecated(
-      reason: "The `metafields` field will be removed in the future in favor of using [aliases](https://graphql.org/learn/queries/#aliases) with the `metafield` field.\n"
+      reason: "As of 2022-07, the paginated `metafields` field has been repurposed to require a list of metafield identifiers.\n"
     )
 
   """
@@ -8901,6 +9598,21 @@ type QueryRoot {
   ): ArticleConnection!
 
   """
+  Fetch a specific `Blog` by one of its unique attributes.
+  """
+  blog(
+    """
+    The handle of the `Blog`.
+    """
+    handle: String
+
+    """
+    The ID of the `Blog`.
+    """
+    id: ID
+  ): Blog
+
+  """
   Find a blog by its handle.
   """
   blogByHandle(
@@ -8947,6 +9659,31 @@ type QueryRoot {
     """
     sortKey: BlogSortKeys = ID
   ): BlogConnection!
+
+  """
+  Find a cart by its ID.
+  """
+  cart(
+    """
+    The id of the cart.
+    """
+    id: ID!
+  ): Cart
+
+  """
+  Fetch a specific `Collection` by one of its unique attributes.
+  """
+  collection(
+    """
+    The handle of the `Collection`.
+    """
+    handle: String
+
+    """
+    The ID of the `Collection`.
+    """
+    id: ID
+  ): Collection
 
   """
   Find a collection by its handle.
@@ -9070,6 +9807,21 @@ type QueryRoot {
   ): [Node]!
 
   """
+  Fetch a specific `Page` by one of its unique attributes.
+  """
+  page(
+    """
+    The handle of the `Page`.
+    """
+    handle: String
+
+    """
+    The ID of the `Page`.
+    """
+    id: ID
+  ): Page
+
+  """
   Find a page by its handle.
   """
   pageByHandle(
@@ -9116,6 +9868,21 @@ type QueryRoot {
     """
     sortKey: PageSortKeys = ID
   ): PageConnection!
+
+  """
+  Fetch a specific `Product` by one of its unique attributes.
+  """
+  product(
+    """
+    The handle of the `Product`.
+    """
+    handle: String
+
+    """
+    The ID of the `Product`.
+    """
+    id: ID
+  ): Product
 
   """
   Find a product by its handle.
@@ -9298,12 +10065,12 @@ type SellingPlan {
   name: String!
 
   """
-  Represents the selling plan options available in the drop-down list in the storefront. For example, 'Delivery every week' or 'Delivery every 2 weeks' specifies the delivery frequency options for the product.
+  The selling plan options available in the drop-down list in the storefront. For example, 'Delivery every week' or 'Delivery every 2 weeks' specifies the delivery frequency options for the product.
   """
   options: [SellingPlanOption!]!
 
   """
-  Represents how a selling plan affects pricing when a variant is purchased with a selling plan.
+  The price adjustments that a selling plan makes when a variant is purchased with a selling plan.
   """
   priceAdjustments: [SellingPlanPriceAdjustment!]!
 
@@ -9735,12 +10502,12 @@ type Shop implements HasMetafields {
   """
   metafield(
     """
-    Identifier for the metafield (maximum of 30 characters).
+    The identifier for the metafield.
     """
     key: String!
 
     """
-    Container for a set of metafields (maximum of 20 characters).
+    A container for a set of metafields.
     """
     namespace: String!
   ): Metafield
@@ -9770,7 +10537,7 @@ type Shop implements HasMetafields {
     last: Int
 
     """
-    Container for a set of metafields (maximum of 20 characters).
+    Container for a set of metafields.
     """
     namespace: String
 
@@ -9780,7 +10547,7 @@ type Shop implements HasMetafields {
     reverse: Boolean = false
   ): MetafieldConnection!
     @deprecated(
-      reason: "The `metafields` field will be removed in the future in favor of using [aliases](https://graphql.org/learn/queries/#aliases) with the `metafield` field.\n"
+      reason: "As of 2022-07, the paginated `metafields` field has been repurposed to require a list of metafield identifiers.\n"
     )
 
   """
@@ -9936,7 +10703,7 @@ type ShopPolicy implements Node {
 "The availability of a product variant at a particular location.\nLocal pick-up must be enabled in the  store's shipping settings, otherwise this will return an empty result.\n"
 type StoreAvailability {
   """
-  Whether or not this product variant is in-stock at this location.
+  Whether the product variant is in-stock at this location.
   """
   available: Boolean!
 

@@ -1,5 +1,6 @@
-import type { HeadersFunction, LoaderFunction } from "remix";
-import { json, Link, useLoaderData } from "remix";
+import type { HeadersFunction, LoaderFunction } from "@remix-run/node";
+import { json } from "@remix-run/node";
+import { Link, useLoaderData } from "@remix-run/react";
 
 import { OptimisedImage } from "~/components/optimised-image";
 import type { ProductsQueryType } from "~/queries";
@@ -47,6 +48,7 @@ function Hero() {
       </p>
       <div className="mx-auto mt-5 flex max-w-md justify-center md:mt-8">
         <div className="rounded-md shadow">
+          {/* eslint-disable-next-line jsx-a11y/anchor-is-valid */}
           <a
             href="#"
             className="flex w-full items-center justify-center divide-x divide-gray-600 rounded-md border border-transparent bg-gray-900 px-6 py-4 text-base font-medium text-white hover:bg-gray-700 md:text-lg"

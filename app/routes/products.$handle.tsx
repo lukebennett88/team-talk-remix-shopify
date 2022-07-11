@@ -1,12 +1,10 @@
-import type { ActionFunction, HeadersFunction, LoaderFunction } from "remix";
-import {
-  Form,
-  json,
-  Link,
-  redirect,
-  useLoaderData,
-  useTransition,
-} from "remix";
+import type {
+  ActionFunction,
+  HeadersFunction,
+  LoaderFunction,
+} from "@remix-run/node";
+import { json, redirect } from "@remix-run/node";
+import { Form, Link, useLoaderData, useTransition } from "@remix-run/react";
 
 import { OptimisedImage } from "~/components/optimised-image";
 import type { ProductsQueryType, SingleProductQueryType } from "~/queries";
@@ -205,6 +203,7 @@ export default function ProductPage() {
               <h2 className="text-lg font-medium text-gray-900">
                 Customers also viewed
               </h2>
+              {/* eslint-disable-next-line jsx-a11y/anchor-is-valid */}
               <a
                 href="#"
                 className="whitespace-nowrap text-sm font-medium text-gray-600 hover:text-gray-500"
