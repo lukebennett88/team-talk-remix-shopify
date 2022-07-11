@@ -1,13 +1,13 @@
-import type { ActionFunction, LoaderFunction } from "remix";
-import {
-  Form,
-  json,
-  Link,
-  redirect,
-  useLoaderData,
-  useTransition,
-} from "remix";
+import type {
+  ActionFunction,
+  HeadersFunction,
+  LoaderFunction,
+} from "@remix-run/node";
+import { json, redirect } from "@remix-run/node";
+import { Form, Link, useLoaderData, useTransition } from "@remix-run/react";
 
+import { OptimisedImage } from "~/components/optimised-image";
+import type { ProductsQueryType, SingleProductQueryType } from "~/queries";
 import {
   CREATE_CHECKOUT_URL_MUTATION,
   PRODUCTS_QUERY,
@@ -18,11 +18,13 @@ import { shopifyClient } from "~/utils/shopify-client";
 
 const VARIANT_ID = "variantId";
 
+export const headers: HeadersFunction = () => {
+  return { "Cache-Control": "max-age=3600" };
+};
+
 type LoaderData = {
-  product: NonNullable<
-    typeof SINGLE_PRODUCT_QUERY["___type"]["result"]["productByHandle"]
-  >;
-  relatedProducts: typeof PRODUCTS_QUERY["___type"]["result"]["products"]["edges"];
+  product: NonNullable<SingleProductQueryType["productByHandle"]>;
+  relatedProducts: ProductsQueryType["products"]["edges"];
 };
 
 export const loader: LoaderFunction = async ({ params }) => {
@@ -32,11 +34,11 @@ export const loader: LoaderFunction = async ({ params }) => {
   }
 
   const [singleProductResponse, relatedProductsResponse] = await Promise.all([
-    await shopifyClient({
+    shopifyClient({
       operation: SINGLE_PRODUCT_QUERY,
       variables: { handle },
     }),
-    await shopifyClient({
+    shopifyClient({
       operation: PRODUCTS_QUERY,
       variables: { first: 5 },
     }),
@@ -51,10 +53,10 @@ export const loader: LoaderFunction = async ({ params }) => {
     .filter(({ node }) => node.handle !== handle)
     .slice(0, 4);
 
-  return json<LoaderData>({
-    product,
-    relatedProducts,
-  });
+  return json<LoaderData>(
+    { product, relatedProducts },
+    { headers: { "Cache-Control": "public, s-maxage=3600" } }
+  );
 };
 
 export const action: ActionFunction = async ({ params, request }) => {
@@ -103,10 +105,34 @@ export default function ProductPage() {
           {/* Product image */}
           <div className="lg:col-span-4 lg:row-end-1">
             <div className="aspect-[4/3] overflow-hidden rounded-lg bg-gray-100">
-              <img
+              <OptimisedImage
                 src={product.images.edges[0].node.transformedSrc}
                 alt={product.images.edges[0].node.altText || ""}
                 className="object-cover object-center"
+                loading="eager"
+                decoding="async"
+                height={730}
+                width={974}
+                responsive={[
+                  {
+                    size: {
+                      height: 730,
+                      width: 974,
+                    },
+                  },
+                  {
+                    size: {
+                      height: 730 * 1.5,
+                      width: 974 * 1.5,
+                    },
+                  },
+                  {
+                    size: {
+                      height: 730 * 2,
+                      width: 974 * 2,
+                    },
+                  },
+                ]}
               />
             </div>
           </div>
@@ -177,6 +203,7 @@ export default function ProductPage() {
               <h2 className="text-lg font-medium text-gray-900">
                 Customers also viewed
               </h2>
+              {/* eslint-disable-next-line jsx-a11y/anchor-is-valid */}
               <a
                 href="#"
                 className="whitespace-nowrap text-sm font-medium text-gray-600 hover:text-gray-500"
@@ -188,23 +215,37 @@ export default function ProductPage() {
               {relatedProducts.map(({ node }) => (
                 <div key={node.id} className="group relative">
                   <div className="aspect-[4/3] overflow-hidden rounded-lg bg-gray-100">
-                    <img
+                    <OptimisedImage
                       src={node.images.edges[0].node.transformedSrc}
                       alt={node.images.edges[0].node.altText || ""}
-                      className="object-cover object-center group-hover:opacity-75"
+                      className="h-full w-full object-cover object-center group-hover:opacity-75"
+                      height={240}
+                      width={320}
+                      responsive={[
+                        {
+                          size: {
+                            height: 240,
+                            width: 320,
+                          },
+                        },
+                        {
+                          size: {
+                            height: 240 * 1.5,
+                            width: 320 * 1.5,
+                          },
+                        },
+                        {
+                          size: {
+                            height: 240 * 2,
+                            width: 320 * 2,
+                          },
+                        },
+                      ]}
                     />
-                    <div
-                      className="flex items-end p-4 opacity-0 group-hover:opacity-100"
-                      aria-hidden="true"
-                    >
-                      <div className="w-full rounded-md bg-white bg-opacity-75 py-2 px-4 text-center text-sm font-medium text-gray-900 backdrop-blur backdrop-filter">
-                        View Product
-                      </div>
-                    </div>
                   </div>
                   <div className="mt-4 flex items-center justify-between space-x-8 text-base font-medium text-gray-900">
                     <h3>
-                      <Link to={`/products/${node.handle}`}>
+                      <Link prefetch="intent" to={`/products/${node.handle}`}>
                         <span aria-hidden="true" className="absolute inset-0" />
                         {node.title}
                       </Link>

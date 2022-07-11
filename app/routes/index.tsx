@@ -1,17 +1,27 @@
-import type { LoaderFunction } from "remix";
-import { json, Link, useLoaderData } from "remix";
+import type { HeadersFunction, LoaderFunction } from "@remix-run/node";
+import { json } from "@remix-run/node";
+import { Link, useLoaderData } from "@remix-run/react";
 
+import { OptimisedImage } from "~/components/optimised-image";
+import type { ProductsQueryType } from "~/queries";
 import { PRODUCTS_QUERY } from "~/queries";
 import { formatCurrency } from "~/utils/format-currency";
 import { shopifyClient } from "~/utils/shopify-client";
 
 type LoaderData = {
-  products: typeof PRODUCTS_QUERY["___type"]["result"]["products"]["edges"];
+  products: ProductsQueryType["products"]["edges"];
 };
 
 export const loader: LoaderFunction = async () => {
   const { data } = await shopifyClient({ operation: PRODUCTS_QUERY });
-  return json<LoaderData>({ products: data.products.edges });
+  return json<LoaderData>(
+    { products: data.products.edges },
+    { headers: { "Cache-Control": "public, s-maxage=3600" } }
+  );
+};
+
+export const headers: HeadersFunction = () => {
+  return { "Cache-Control": "max-age=3600" };
 };
 
 export default function Index() {
@@ -38,6 +48,7 @@ function Hero() {
       </p>
       <div className="mx-auto mt-5 flex max-w-md justify-center md:mt-8">
         <div className="rounded-md shadow">
+          {/* eslint-disable-next-line jsx-a11y/anchor-is-valid */}
           <a
             href="#"
             className="flex w-full items-center justify-center divide-x divide-gray-600 rounded-md border border-transparent bg-gray-900 px-6 py-4 text-base font-medium text-white hover:bg-gray-700 md:text-lg"
@@ -59,12 +70,39 @@ function Products({ products }: { products: LoaderData["products"] }) {
       </h2>
       <div className="grid grid-cols-1 gap-y-10 gap-x-6 sm:grid-cols-2 lg:grid-cols-3 xl:gap-x-8">
         {products.map(({ node }) => (
-          <Link key={node.id} className="group" to={`/products/${node.handle}`}>
+          <Link
+            key={node.id}
+            prefetch="intent"
+            className="group"
+            to={`/products/${node.handle}`}
+          >
             <div className="aspect-[4/3] w-full overflow-hidden rounded-lg">
-              <img
+              <OptimisedImage
                 src={node.images.edges[0].node.transformedSrc}
                 className="h-full w-full object-cover object-center group-hover:opacity-75"
                 alt={node.images.edges[0].node.altText || ""}
+                height={430}
+                width={574}
+                responsive={[
+                  {
+                    size: {
+                      height: 730,
+                      width: 974,
+                    },
+                  },
+                  {
+                    size: {
+                      height: 730 * 1.5,
+                      width: 974 * 1.5,
+                    },
+                  },
+                  {
+                    size: {
+                      height: 730 * 2,
+                      width: 974 * 2,
+                    },
+                  },
+                ]}
               />
             </div>
             <div className="mt-4 flex items-center justify-between text-base font-medium text-gray-900">
